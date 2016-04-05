@@ -3,7 +3,9 @@
 
 #include <iostream>
 #include <algorithm>
+#include <utility>
 #include <vector>
+#include <iterator>
 
 namespace trisnap {
 namespace thinmat {
@@ -16,23 +18,27 @@ class CRSAllocator {
       CRSAllocator(row, col, zero) { };
   #endif
   CRSAllocator(IndexType row, IndexType col, const DataType &zero) :
-      _row(row), _col(col), zero(zero), data(), col_index(), row_index(row + 1) { }
+      _row(row), _col(col), zero(zero), data(), row_index(row + 1, 0), not_found(row * col) {
+  }
 
   const DataType &get(const IndexType row, const IndexType col) const {
-    const IndexType begin = row_index[row], end = row_index[row + 2];
-    const auto cbegin = col_index.cbegin();
-    auto iter = std::find(cbegin + begin, cbegin + end, col);
-    if (iter == col_index.cend()) {
+    auto pos = find(row, col);
+    if (pos == not_found) {
       return zero;
     } else {
-      return data[*iter];
+      return data[pos].second;
     }
   }
 
-  void set(const DataType &value, const IndexType row, const IndexType col) {
-    const IndexType begin = row_index[row], end = row_index[row + 1];
-    const auto cbegin = col_index.cbegin();
-    auto iter = std::find(cbegin + begin, cbegin + end, col);
+  void set(const IndexType row, const IndexType col, const DataType &value) {
+    IndexType result = find(row, col);
+    if (result == not_found) { // 插入
+      auto succ_begin = row_index.begin() + row + (_row > 1);
+      data.insert(data.begin() + *succ_begin, pair_t(col, value));
+      std::transform(succ_begin, row_index.end(), succ_begin, succ);
+    } else { // 改写
+      data[result].second = value;
+    }
   }
 
   const size_t count() const {
@@ -40,11 +46,29 @@ class CRSAllocator {
   }
 
  private:
+  typedef std::pair<IndexType, DataType> pair_t;
   const DataType zero;
+  const IndexType not_found;
   IndexType _col, _row;
-  std::vector<DataType> data;
-  std::vector<IndexType> col_index;
+  std::vector<std::pair<IndexType, DataType>> data;
   std::vector<IndexType> row_index;
+
+  inline IndexType find(const IndexType row, const IndexType col) const {
+    const auto range_begin = data.cbegin() + row_index[row];
+    const auto range_end = data.cbegin() + row_index[row + 1];
+    auto result = std::find_if(range_begin, range_end, [col](const pair_t &p) {
+      return p.first == col;
+    });
+    if (std::distance(result, range_end) == 0) {
+      return not_found;
+    } else {
+      return std::distance(data.cbegin(), result);
+    }
+  }
+
+  static inline IndexType succ(const IndexType i) {
+    return i + 1;
+  }
 };
 
 }
