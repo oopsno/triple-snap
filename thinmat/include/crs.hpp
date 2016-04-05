@@ -11,8 +11,12 @@ namespace thinmat {
 template<typename DataType, typename IndexType>
 class CRSAllocator {
  public:
+  #if defined(THINMAT_CRS_UNITTEST)
+  inline CRSAllocator(IndexType row, IndexType col, const DataType &&zero) :
+      CRSAllocator(row, col, zero) { };
+  #endif
   CRSAllocator(IndexType row, IndexType col, const DataType &zero) :
-      _row(row), _col(col), zero(), data(), col_index(), row_index(row + 1) { }
+      _row(row), _col(col), zero(zero), data(), col_index(), row_index(row + 1) { }
 
   const DataType &get(const IndexType row, const IndexType col) const {
     const IndexType begin = row_index[row], end = row_index[row + 2];
