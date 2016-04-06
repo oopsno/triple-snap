@@ -11,7 +11,7 @@
 namespace trisnap {
 namespace thinmat {
 
-template<typename DataType, typename IndexType, template<typename DT, typename IT> class Allocator>
+template<typename DataType, typename IndexType, template<typename DT, typename IT> typename Allocator>
 class BasicSparseMatrix {
  public:
   static_assert(std::is_integral<IndexType>::value, "IndexType isn't an integral primitive");
@@ -41,9 +41,9 @@ class BasicSparseMatrix {
     return ref_t(row, col, allocator);
   }
 
-  inline const DataType &insert(const DataType &value, const IndexType row, const IndexType col) {
+  inline const DataType &insert(const IndexType row, const IndexType col, const DataType &value) {
     bound_check(row, col);
-    return allocator->set(value, row, col);
+    return allocator->set(row, col, value);
   }
 
   inline const IndexType col() const {

@@ -56,7 +56,7 @@ class CRSAllocator {
   inline IndexType find(const IndexType row, const IndexType col) const {
     const auto range_begin = data.cbegin() + row_index[row];
     const auto range_end = data.cbegin() + row_index[row + 1];
-    auto result = std::find_if(range_begin, range_end, [col](const pair_t &p) {
+    auto result = std::find_if(range_begin, range_end, [col](auto &p) {
       return p.first == col;
     });
     if (std::distance(result, range_end) == 0) {
